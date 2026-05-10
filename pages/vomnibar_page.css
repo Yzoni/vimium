@@ -75,6 +75,8 @@ ul {
 }
 
 #vomnibar li .icon {
+  width: 16px;
+  height: 16px;
   padding: 0 13px 0 6px;
   vertical-align: bottom;
 }

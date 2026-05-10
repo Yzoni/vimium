@@ -45,6 +45,8 @@ export class Suggestion {
   deDuplicate = true;
   // The tab represented by this suggestion. Populated by TabCompleter.
   tabId;
+  // The favicon URL for the tab. Populated by TabCompleter.
+  favIconUrl;
   // Whether this is a suggestion provided by a user's custom search engine.
   isCustomSearch;
   // Whether this is meant to be the first suggestion from the user's custom search engine which
@@ -80,11 +82,15 @@ export class Suggestion {
       this.title = this.insertText;
     }
     let faviconHtml = "";
-    if (this.description === "tab" && !bgUtils.isFirefox()) {
-      const faviconUrl = new URL(chrome.runtime.getURL("/_favicon/"));
-      faviconUrl.searchParams.set("pageUrl", this.url);
-      faviconUrl.searchParams.set("size", "16");
-      faviconHtml = `<img class="icon" src="${faviconUrl.toString()}" />`;
+    if (this.description === "tab") {
+      if (this.favIconUrl) {
+        faviconHtml = `<img class="icon" src="${Utils.escapeHtml(this.favIconUrl)}" />`;
+      } else if (!bgUtils.isFirefox()) {
+        const faviconUrl = new URL(chrome.runtime.getURL("/_favicon/"));
+        faviconUrl.searchParams.set("pageUrl", this.url);
+        faviconUrl.searchParams.set("size", "16");
+        faviconHtml = `<img class="icon" src="${faviconUrl.toString()}" />`;
+      }
     }
     if (this.isCustomSearch) {
       this.html = `\
@@ -101,9 +107,8 @@ export class Suggestion {
    <span class="title">${this.highlightQueryTerms(Utils.escapeHtml(this.title))}</span>
  </div>
  <div class="bottom-half">
-  <span class="source no-insert-text">${insertTextIndicator}</span>${faviconHtml}<span class="url">${
-        this.highlightQueryTerms(Utils.escapeHtml(this.shortenUrl()))
-      }</span>
+  <span class="source no-insert-text">${insertTextIndicator}</span>${faviconHtml}<span class="url">${this.highlightQueryTerms(Utils.escapeHtml(this.shortenUrl()))
+        }</span>
   ${relevancyHtml}
 </div>\
 `;
@@ -505,6 +510,7 @@ export class TabCompleter {
           url: tab.url,
           title: tab.title,
           tabId: tab.id,
+          favIconUrl: tab.favIconUrl,
           deDuplicate: false,
         });
         suggestion.relevancy = this.computeRelevancy(suggestion);
